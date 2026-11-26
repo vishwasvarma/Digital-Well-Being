@@ -1,0 +1,23 @@
+
+name: Digital Well Being
+
+on:
+  push:
+    branches:
+      - vishwas
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check:
+    name: Verify Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Confirm successful execution
+        run: echo "GitHub Actions pipeline executed successfully!"
