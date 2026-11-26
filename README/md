@@ -1,0 +1,899 @@
+# Smart Digital Well-Being System for PC and Mobile Gaming Using Physiological Data
+
+## 1. Project Overview
+
+The Smart Digital Well-Being System is a cross-platform application designed to monitor gaming activities on both Windows computers and Android mobile devices.
+
+The system tracks gaming sessions, identifies games, calculates gaming duration, and combines gaming behaviour with available smartwatch physiological data to estimate stress levels.
+
+It provides personalized break reminders, gaming-history tracking, analytics, and downloadable reports to help users develop healthier gaming habits.
+
+The project consists of three primary applications:
+
+1. **Windows Application:** Detects PC applications and games, classifies them, and tracks gaming sessions.
+2. **Android Application:** Detects mobile games, tracks gaming duration, displays gaming history, and provides notifications.
+3. **Web Dashboard:** Displays combined PC and mobile gaming statistics, estimated stress information, charts, and downloadable reports.
+
+A common local backend connects all three components and stores their information in a central database.
+
+The initial implementation will use a completely local architecture without paid cloud hosting or subscription services.
+
+---
+
+## 2. Project Objectives
+
+- Monitor gaming activities on Windows and Android devices.
+- Automatically identify gaming applications and distinguish them from normal applications.
+- Track gaming-session start time, end time, and total duration.
+- Integrate available physiological data from the boAt Xtend smartwatch, subject to supported data access.
+- Analyze gaming behaviour and physiological information using machine-learning algorithms.
+- Generate an estimated stress score using the trained model.
+- Provide notifications and personalized break reminders.
+- Synchronize PC and mobile gaming histories.
+- Display combined gaming information through a dashboard.
+- Generate downloadable reports in PDF, CSV, and Excel formats.
+
+---
+
+## 3. Project Architecture
+
+The project uses a local client-server architecture.
+
+The Windows laptop acts as the central server and runs the FastAPI backend and SQLite database.
+
+The Windows monitoring application and Android application communicate with the backend through REST APIs over the same local Wi-Fi network.
+
+### Architecture Flow
+
+```text
+             WINDOWS COMPUTER
+          +----------------------+
+          | Windows Application  |
+          |                      |
+          | Process Detection    |
+          | Game Classification  |
+          | Session Tracking     |
+          +----------+-----------+
+                     |
+                     |
+                     v
+             LOCAL WI-FI NETWORK
+                     ^
+                     |
+          +----------+-----------+
+          | Android Application |
+          |                      |
+          | Mobile Game Tracking |
+          | Gaming History       |
+          | Notifications        |
+          +----------------------+
+
+                     |
+                     v
+          +----------------------+
+          |   FASTAPI BACKEND    |
+          |                      |
+          | REST API             |
+          | Data Synchronization |
+          | Analytics            |
+          | Report Generation    |
+          +----------+-----------+
+                     |
+                     v
+          +----------------------+
+          |   SQLITE DATABASE    |
+          |                      |
+          | Users                |
+          | Games                 |
+          | Gaming Sessions      |
+          | Watch Readings       |
+          | Stress Results       |
+          | Notifications        |
+          +----------+-----------+
+                     |
+                     v
+          +----------------------+
+          | MACHINE LEARNING     |
+          |                      |
+          | Preprocessing        |
+          | Feature Extraction   |
+          | Model Training       |
+          | Stress Prediction    |
+          +----------+-----------+
+                     |
+                     v
+          +----------------------+
+          | WEB DASHBOARD        |
+          | ANDROID DASHBOARD    |
+          |                      |
+          | Analytics            |
+          | Gaming History       |
+          | Stress Information   |
+          | Notifications        |
+          | Download Reports     |
+          +----------------------+
+```
+
+### Local Architecture
+
+- No cloud server is required.
+- No paid database service is required.
+- The laptop runs the backend locally.
+- The phone and laptop communicate through the same Wi-Fi network.
+- If the laptop is unavailable, the Android app stores pending records locally and synchronizes them later.
+- Online game metadata lookup is optional and requires internet access.
+
+---
+
+## 4. Main Project Modules
+
+### 4.1 Windows Monitoring Application
+
+**Purpose:** Monitor PC usage and automatically detect gaming activities.
+
+**Technologies:**
+
+- Python
+- PyWin32
+- Win32 API
+- psutil
+- SQLite
+
+**Functionalities:**
+
+1. Detect running Windows processes.
+2. Identify the currently active application.
+3. Retrieve process name, executable path, and process ID.
+4. Classify applications as games or non-game applications.
+5. Check a local game database.
+6. Perform online metadata lookup for unknown applications when available.
+7. Track gaming-session start and end times.
+8. Calculate gaming duration.
+9. Store gaming history.
+10. Send gaming-session records to the backend.
+
+### 4.2 Android Mobile Application
+
+**Purpose:** Monitor mobile gaming activity and provide a user interface for the complete well-being system.
+
+**Technologies:**
+
+- Android Studio
+- Kotlin
+- Android UsageStatsManager
+- Room Database
+- Retrofit or another HTTP client
+
+**Functionalities:**
+
+1. Detect foreground mobile applications using Android usage-access permission.
+2. Identify games using a local game database.
+3. Record gaming start and end times.
+4. Calculate mobile gaming duration.
+5. Store records locally when offline.
+6. Synchronize gaming records with the laptop backend.
+7. Display PC and mobile gaming history.
+8. Display estimated stress information.
+9. Show break reminders and notifications.
+10. Allow users to configure gaming-time limits.
+11. Download reports from the backend.
+
+**Android limitation:** Monitoring other applications requires user-granted usage access. Android does not provide unrestricted access to all application activity. Background monitoring behaviour also depends on Android version and device restrictions.
+
+### 4.3 Backend and API
+
+**Purpose:** Connect the Windows application, Android application, database, machine-learning module, and web dashboard.
+
+**Technologies:**
+
+- Python
+- FastAPI
+- SQLite
+- SQLAlchemy
+- Pydantic
+
+**Functionalities:**
+
+1. Receive PC gaming-session information.
+2. Receive mobile gaming-session information.
+3. Store records in the central database.
+4. Synchronize data between devices.
+5. Retrieve combined gaming statistics.
+6. Provide information to the dashboard.
+7. Send data to the machine-learning module.
+8. Generate and serve downloadable reports.
+
+**Planned API endpoints:**
+
+| Endpoint         | Purpose                                 |
+| ---------------- | --------------------------------------- |
+| `/api/sessions`  | Upload and retrieve gaming sessions     |
+| `/api/games`     | Manage known games                      |
+| `/api/dashboard` | Retrieve combined dashboard information |
+| `/api/stress`    | Retrieve estimated stress scores        |
+| `/api/alerts`    | Manage notification records             |
+| `/api/reports`   | Generate and download reports           |
+| `/api/sync`      | Synchronize pending device records      |
+
+These are planned endpoints; their request methods and implementation will be defined during backend development.
+
+### 4.4 Machine-Learning Module
+
+**Purpose:** Analyze gaming behaviour and available physiological readings to estimate stress levels.
+
+**Technologies:**
+
+- Python
+- NumPy
+- Pandas
+- Scikit-learn
+- Matplotlib
+
+**Proposed algorithms:**
+
+- Random Forest – primary classification model.
+- Logistic Regression – comparison model.
+- Support Vector Machine (SVM) – comparison model.
+- Decision Tree – optional comparison model.
+
+**Processing steps:**
+
+1. Collect labelled training data.
+2. Clean and preprocess the dataset.
+3. Handle missing and invalid readings.
+4. Synchronize gaming and physiological timestamps.
+5. Extract useful features.
+6. Train machine-learning models.
+7. Evaluate model performance.
+8. Save the trained model.
+9. Use the model for new predictions.
+10. Generate an estimated stress score.
+
+**Possible input features:**
+
+- Average heart rate.
+- HRV features, if available.
+- Gaming-session duration.
+- Activity level.
+- Gaming frequency.
+- Other validated physiological features.
+
+**Evaluation metrics:**
+
+- Accuracy.
+- Precision.
+- Recall.
+- F1-score.
+
+**Dataset considerations:**
+
+WESAD (Wearable Stress and Affect Detection) can support wearable stress research. However, it is not a gaming-specific dataset.
+
+Gaming-specific data should be collected and labelled to evaluate the system in its intended environment.
+
+The estimated stress score is not a medical diagnosis and must not be interpreted as a definitive measurement of stress or gaming addiction.
+
+### 4.5 Smartwatch Integration
+
+**Device:** boAt Xtend Smartwatch  
+**Companion application:** boAt Wave
+
+The smartwatch integration module is planned to collect available physiological information.
+
+**Possible readings:**
+
+- Heart rate.
+- HRV, if supported and accessible.
+- Activity information.
+- Measurement timestamps.
+
+The integration method will depend on the availability of an official boAt API, SDK, data export, or supported third-party integration.
+
+Google Fit and Health Connect access have not yet been confirmed for this particular watch setup.
+
+This module will be developed after the Windows and Android gaming-monitoring components are functional.
+
+### 4.6 Web Dashboard
+
+**Purpose:** Display complete gaming and well-being information in a browser.
+
+**Technologies:**
+
+- React.js
+- JavaScript
+- HTML
+- CSS
+- Chart.js
+
+**Dashboard features:**
+
+- Total PC gaming duration.
+- Total mobile gaming duration.
+- Combined gaming duration.
+- Games played.
+- Daily and weekly gaming history.
+- Estimated stress-score history.
+- Available smartwatch readings.
+- Notifications and reminders.
+- Downloadable reports.
+
+### 4.7 Notification System
+
+**Purpose:** Remind users to take breaks and manage gaming duration.
+
+**Notification platforms:**
+
+- Windows desktop notifications.
+- Android notifications.
+- Dashboard alerts.
+
+**Possible notification conditions:**
+
+- Gaming duration exceeds a configured limit.
+- A prolonged gaming session continues.
+- An estimated stress score crosses a validated threshold.
+
+Notification frequency and thresholds will be configurable.
+
+### 4.8 Report Generation
+
+**Purpose:** Allow users to download gaming and well-being reports.
+
+**Report information:**
+
+- Selected date range.
+- Games played.
+- Gaming-session details.
+- Total PC gaming duration.
+- Total mobile gaming duration.
+- Combined gaming duration.
+- Available physiological readings.
+- Estimated stress-score history.
+- Notifications and reminders.
+- Daily and weekly summaries.
+
+**Supported formats:**
+
+- PDF
+- CSV
+- Excel (XLSX)
+
+Reports will be accessible from both the Android application and web dashboard.
+
+---
+
+## 5. Technology Stack
+
+| Component                 | Technology                            |
+| ------------------------- | ------------------------------------- |
+| Main programming language | Python                                |
+| Windows monitoring        | PyWin32, Win32 API, psutil            |
+| Android development       | Kotlin, Android Studio                |
+| Mobile app monitoring     | UsageStatsManager                     |
+| Backend                   | FastAPI                               |
+| API communication         | REST API                              |
+| Local database            | SQLite                                |
+| Android local storage     | Room Database                         |
+| Web dashboard             | React.js                              |
+| Machine learning          | Scikit-learn                          |
+| Data processing           | Pandas, NumPy                         |
+| Data visualization        | Chart.js, Matplotlib                  |
+| Windows notifications     | winotify or Windows notification APIs |
+| Android notifications     | Android Notification APIs             |
+| PDF reports               | ReportLab                             |
+| Excel reports             | OpenPyXL                              |
+| Development editor        | Visual Studio Code                    |
+| Version control           | Git                                   |
+
+All listed core development technologies are available without paid subscriptions.
+
+---
+
+## 6. Complete Project Folder Structure
+
+```text
+Gaming_Overuse_Prevention/
+│
+├── windows_monitor/
+│   │
+│   ├── main.py
+│   ├── process_monitor.py
+│   ├── active_window.py
+│   ├── game_classifier.py
+│   ├── game_database.py
+│   ├── online_game_lookup.py
+│   ├── session_tracker.py
+│   ├── api_client.py
+│   ├── notification_manager.py
+│   └── config.py
+│
+│
+├── android_app/
+│   │
+│   ├── settings.gradle.kts
+│   ├── build.gradle.kts
+│   ├── gradle.properties
+│   │
+│   └── app/
+│       ├── build.gradle.kts
+│       │
+│       └── src/
+│           ├── main/
+│           │   ├── AndroidManifest.xml
+│           │   │
+│           │   ├── java/
+│           │   │   └── com/example/digitalwellbeing/
+│           │   │       │
+│           │   │       ├── MainActivity.kt
+│           │   │       │
+│           │   │       ├── monitoring/
+│           │   │       │   ├── AppUsageMonitor.kt
+│           │   │       │   └── MobileGameClassifier.kt
+│           │   │       │
+│           │   │       ├── data/
+│           │   │       │   ├── LocalDatabase.kt
+│           │   │       │   └── SessionRepository.kt
+│           │   │       │
+│           │   │       ├── network/
+│           │   │       │   └── ApiClient.kt
+│           │   │       │
+│           │   │       ├── notifications/
+│           │   │       │   └── NotificationManager.kt
+│           │   │       │
+│           │   │       └── ui/
+│           │   │           ├── DashboardScreen.kt
+│           │   │           ├── HistoryScreen.kt
+│           │   │           └── SettingsScreen.kt
+│           │   │
+│           │   └── res/
+│           │
+│           └── test/
+│
+│
+├── backend/
+│   │
+│   ├── main.py
+│   ├── config.py
+│   │
+│   ├── api/
+│   │   ├── sessions.py
+│   │   ├── games.py
+│   │   ├── dashboard.py
+│   │   ├── stress.py
+│   │   ├── alerts.py
+│   │   └── reports.py
+│   │
+│   ├── database/
+│   │   ├── connection.py
+│   │   ├── models.py
+│   │   └── schemas.py
+│   │
+│   ├── services/
+│   │   ├── sync_service.py
+│   │   ├── analytics_service.py
+│   │   └── report_service.py
+│   │
+│   └── storage/
+│       └── wellbeing.db
+│
+│
+├── web_dashboard/
+│   │
+│   ├── package.json
+│   ├── index.html
+│   │
+│   └── src/
+│       ├── App.jsx
+│       │
+│       ├── api/
+│       │   └── api.js
+│       │
+│       ├── components/
+│       │   ├── SummaryCards.jsx
+│       │   ├── GamingChart.jsx
+│       │   └── StressChart.jsx
+│       │
+│       └── pages/
+│           ├── Dashboard.jsx
+│           ├── GamingHistory.jsx
+│           └── Reports.jsx
+│
+│
+├── ml_model/
+│   │
+│   ├── dataset/
+│   ├── preprocessing.py
+│   ├── feature_extraction.py
+│   ├── train_model.py
+│   ├── evaluate_model.py
+│   ├── predict.py
+│   │
+│   └── saved_model/
+│
+│
+├── smartwatch_integration/
+│   └── README.md
+│
+│
+├── reports/
+│
+├── docs/
+│   └── architecture.md
+│
+│
+├── requirements.txt
+├── README.md
+└── .gitignore
+```
+
+---
+
+## 7. Folder and File Responsibilities
+
+### Windows Monitor
+
+| File                      | Responsibility                             |
+| ------------------------- | ------------------------------------------ |
+| `main.py`                 | Starts the Windows monitoring application  |
+| `process_monitor.py`      | Detects running Windows processes          |
+| `active_window.py`        | Identifies the foreground application      |
+| `game_classifier.py`      | Classifies games and non-game applications |
+| `game_database.py`        | Manages the local game list                |
+| `online_game_lookup.py`   | Optional online game metadata lookup       |
+| `session_tracker.py`      | Tracks gaming-session duration             |
+| `api_client.py`           | Sends gaming records to the backend        |
+| `notification_manager.py` | Sends Windows notifications                |
+| `config.py`               | Stores application settings                |
+
+### Android Application
+
+| File                      | Responsibility                       |
+| ------------------------- | ------------------------------------ |
+| `MainActivity.kt`         | Main application entry point         |
+| `AppUsageMonitor.kt`      | Monitors application usage           |
+| `MobileGameClassifier.kt` | Identifies mobile games              |
+| `LocalDatabase.kt`        | Stores mobile gaming records locally |
+| `SessionRepository.kt`    | Manages gaming-session records       |
+| `ApiClient.kt`            | Communicates with the backend        |
+| `NotificationManager.kt`  | Handles Android notifications        |
+| `DashboardScreen.kt`      | Displays combined gaming statistics  |
+| `HistoryScreen.kt`        | Displays gaming history              |
+| `SettingsScreen.kt`       | Manages user settings                |
+
+### Backend
+
+| File                   | Responsibility                    |
+| ---------------------- | --------------------------------- |
+| `main.py`              | Starts the FastAPI server         |
+| `sessions.py`          | Receives gaming-session records   |
+| `games.py`             | Manages game information          |
+| `dashboard.py`         | Provides dashboard data           |
+| `stress.py`            | Provides stress-score information |
+| `alerts.py`            | Manages alerts                    |
+| `reports.py`           | Generates downloadable reports    |
+| `connection.py`        | Establishes database connections  |
+| `models.py`            | Defines database tables           |
+| `schemas.py`           | Defines API data structures       |
+| `sync_service.py`      | Synchronizes records              |
+| `analytics_service.py` | Calculates usage statistics       |
+| `report_service.py`    | Creates downloadable reports      |
+
+### Web Dashboard
+
+| File                | Responsibility                   |
+| ------------------- | -------------------------------- |
+| `App.jsx`           | Main React application           |
+| `api.js`            | Communicates with the backend    |
+| `SummaryCards.jsx`  | Displays key statistics          |
+| `GamingChart.jsx`   | Displays gaming-duration charts  |
+| `StressChart.jsx`   | Displays estimated stress trends |
+| `Dashboard.jsx`     | Main dashboard page              |
+| `GamingHistory.jsx` | Gaming-history page              |
+| `Reports.jsx`       | Report download page             |
+
+### Machine Learning
+
+| File                    | Responsibility                 |
+| ----------------------- | ------------------------------ |
+| `preprocessing.py`      | Cleans input data              |
+| `feature_extraction.py` | Extracts model features        |
+| `train_model.py`        | Trains machine-learning models |
+| `evaluate_model.py`     | Evaluates model performance    |
+| `predict.py`            | Generates predictions          |
+| `dataset/`              | Stores training datasets       |
+| `saved_model/`          | Stores trained models          |
+
+---
+
+## 8. Database Design
+
+A central SQLite database will store the information collected from both devices.
+
+### Planned Tables
+
+| Table             | Important fields                                                        |
+| ----------------- | ----------------------------------------------------------------------- |
+| `users`           | user_id, username, settings                                             |
+| `devices`         | device_id, device_type, device_name                                     |
+| `games`           | game_id, game_name, package_name, executable_name                       |
+| `gaming_sessions` | session_id, user_id, device_id, game_id, start_time, end_time, duration |
+| `watch_readings`  | reading_id, timestamp, heart_rate, hrv, activity                        |
+| `stress_results`  | result_id, timestamp, estimated_score, model_version                    |
+| `alerts`          | alert_id, alert_type, message, timestamp                                |
+| `settings`        | setting_id, gaming_limit, stress_threshold, notification_preferences    |
+
+The `device_type` field will distinguish Windows sessions from Android sessions.
+
+Each session will have a unique identifier to avoid duplicate records during synchronization.
+
+---
+
+## 9. Local Communication and Synchronization
+
+The Windows laptop will host the backend.
+
+Example local network configuration:
+
+```text
+Laptop IP:       192.168.1.5
+Backend Port:    8000
+Backend URL:     http://192.168.1.5:8000
+```
+
+These are example values. The actual laptop IP address will be determined during setup.
+
+### Communication Flow
+
+1. Windows application records a gaming session.
+2. Windows application uploads the record to FastAPI.
+3. Android application records mobile gaming sessions.
+4. Android application uploads records when the server is reachable.
+5. FastAPI stores both types of sessions in SQLite.
+6. Dashboard retrieves combined information.
+7. Machine-learning services analyze suitable data.
+8. Reports are generated from the central database.
+
+### Offline Synchronization
+
+The Android app will store unsynchronized sessions locally.
+
+When the laptop backend becomes available, the app will upload pending records.
+
+The backend will use unique session identifiers to prevent duplicate records.
+
+---
+
+## 10. Dashboard Design
+
+The dashboard will contain the following sections:
+
+### Overview
+
+- Total gaming duration.
+- PC gaming duration.
+- Mobile gaming duration.
+- Total gaming sessions.
+- Latest estimated stress score.
+
+### Games Played
+
+- Game names.
+- Device type.
+- Gaming duration.
+- Session start and end times.
+
+### Gaming History
+
+- Daily gaming history.
+- Weekly gaming trends.
+- Monthly gaming summaries.
+- Gaming duration by device.
+
+### Stress Analysis
+
+- Current estimated stress score.
+- Historical score trends.
+- Available physiological readings.
+- Model evaluation information.
+
+### Notifications
+
+- Gaming-time reminders.
+- Break reminders.
+- Configured threshold alerts.
+
+### Reports
+
+- PDF downloads.
+- CSV downloads.
+- Excel downloads.
+
+---
+
+## 11. Installation and Setup
+
+### Required Software
+
+1. Python 3.10 or newer.
+2. Visual Studio Code.
+3. Android Studio.
+4. Node.js.
+5. Git (optional).
+
+### Python Dependencies
+
+Install the Windows monitoring and backend dependencies:
+
+```bash
+python -m pip install pywin32 psutil requests
+python -m pip install fastapi uvicorn sqlalchemy pydantic
+python -m pip install pandas numpy scikit-learn
+python -m pip install matplotlib reportlab openpyxl
+```
+
+Create the root `requirements.txt` file:
+
+```text
+pywin32
+psutil
+requests
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pandas
+numpy
+scikit-learn
+matplotlib
+reportlab
+openpyxl
+```
+
+Install them using:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Android dependencies will be configured separately through Android Studio and Gradle.
+
+Web dashboard dependencies will be installed using Node.js and npm.
+
+---
+
+## 12. Development Roadmap
+
+Development will be completed in phases.
+
+| Phase    | Development Activity                        |
+| -------- | ------------------------------------------- |
+| Phase 1  | Windows process monitoring                  |
+| Phase 2  | PC game classification                      |
+| Phase 3  | Windows gaming-session tracking             |
+| Phase 4  | SQLite integration for Windows              |
+| Phase 5  | FastAPI backend development                 |
+| Phase 6  | Android application development             |
+| Phase 7  | Mobile game detection and session tracking  |
+| Phase 8  | PC and mobile data synchronization          |
+| Phase 9  | Unified web and Android dashboard           |
+| Phase 10 | Dataset preprocessing and ML model training |
+| Phase 11 | Stress-score prediction                     |
+| Phase 12 | Notification implementation                 |
+| Phase 13 | Report generation and downloads             |
+| Phase 14 | Smartwatch integration                      |
+| Phase 15 | Complete system testing and evaluation      |
+
+Each phase will be implemented and tested before proceeding to the next phase.
+
+---
+
+## 13. Testing and Evaluation
+
+The project will be tested using the following criteria:
+
+### Windows Application
+
+- Process detection accuracy.
+- Active-window identification.
+- Game classification accuracy.
+- Gaming-session tracking accuracy.
+
+### Android Application
+
+- Mobile application usage detection.
+- Gaming-session tracking.
+- Usage-access permission handling.
+- Offline data storage.
+- Backend synchronization.
+
+### Backend
+
+- API request and response handling.
+- Database storage accuracy.
+- Duplicate-record prevention.
+- Device synchronization.
+
+### Machine Learning
+
+- Accuracy.
+- Precision.
+- Recall.
+- F1-score.
+- Performance on appropriate labelled test data.
+
+### Complete System
+
+- PC and mobile gaming-history integration.
+- Combined gaming-duration calculation.
+- Notification delivery.
+- Dashboard data accuracy.
+- PDF, CSV and Excel report generation.
+
+---
+
+## 14. Privacy and Security
+
+- User permission is required for application-usage monitoring.
+- Smartwatch information will only be collected when a supported integration and required permissions are available.
+- Data will initially be stored locally on the laptop and Android device.
+- The backend will be restricted to the local network.
+- API requests will use local authentication.
+- The server will not be exposed publicly.
+- Users should be able to control monitoring and notification settings.
+
+---
+
+## 15. Project Cost
+
+The project is designed to run using free development tools and local storage.
+
+| Component                          | Cost |
+| ---------------------------------- | ---: |
+| Python                             | Free |
+| Visual Studio Code                 | Free |
+| Android Studio                     | Free |
+| FastAPI                            | Free |
+| SQLite                             | Free |
+| React.js                           | Free |
+| Scikit-learn                       | Free |
+| Local backend hosting              | Free |
+| Local notifications                | Free |
+| PDF and Excel generation libraries | Free |
+
+**Expected software and local hosting cost: ₹0**, assuming an existing Windows computer and Android phone are available.
+
+Optional online game metadata services may have their own access restrictions or usage limits. They are not required for basic local game classification.
+
+---
+
+## 16. Future Enhancements
+
+- More accurate automatic game classification.
+- Additional smartwatch integrations.
+- Personalized break-reminder schedules.
+- Improved machine-learning models.
+- Better cross-device synchronization.
+- More detailed gaming-behaviour analytics.
+- Additional report formats and visualizations.
+
+---
+
+## 17. Expected Outcome
+
+The expected result is a working local digital well-being system that monitors PC and mobile gaming activities, combines their gaming histories, analyzes available physiological information, estimates stress levels, and provides personalized break reminders.
+
+The system will offer a unified Android application and web dashboard through which users can view gaming patterns, understand their usage, and download reports.
+
+The project aims to encourage healthier gaming habits through automatic monitoring, data analysis, and accessible digital well-being tools.
+
+---
+
+## 18. Important Implementation Notes
+
+- The folder structure describes the planned architecture; not every file will exist at the beginning.
+- The Windows monitoring module will be developed and tested first.
+- The backend and central database will be added before integrating Android synchronization.
+- Android game monitoring will use supported Android usage-access capabilities.
+- The boAt Xtend smartwatch integration remains a planned module until actual data access is verified.
+- Stress-score predictions will only be considered meaningful after appropriate model training and evaluation.
+- The initial system will operate locally and will not require paid cloud services.
