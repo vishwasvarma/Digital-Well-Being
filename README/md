@@ -114,17 +114,6 @@ The Windows monitoring application and Android application communicate with the 
           +----------------------+
 ```
 
-### Local Architecture
-
-- No cloud server is required.
-- No paid database service is required.
-- The laptop runs the backend locally.
-- The phone and laptop communicate through the same Wi-Fi network.
-- If the laptop is unavailable, the Android app stores pending records locally and synchronizes them later.
-- Online game metadata lookup is optional and requires internet access.
-
----
-
 ## 4. Main Project Modules
 
 ### 4.1 Windows Monitoring Application
@@ -133,7 +122,7 @@ The Windows monitoring application and Android application communicate with the 
 
 **Technologies:**
 
-- Python
+- Pythons
 - PyWin32
 - Win32 API
 - psutil
